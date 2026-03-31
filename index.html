@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI & Tech Investment Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e1a;--bg2:#111827;--bg3:#1a2035;
+  --card-bg:rgba(30,41,66,0.7);--card-border:rgba(255,255,255,0.08);
+  --text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#64748b;
+  --accent:#6366f1;--accent2:#8b5cf6;
+  --t0:#ef4444;--t1:#f97316;--t2:#3b82f6;--t3:#6b7280;
+  --green:#10b981;--sidebar-w:260px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* Header */
+.header{position:fixed;top:0;left:0;right:0;height:64px;background:rgba(10,14,26,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--card-border);display:flex;align-items:center;padding:0 24px;z-index:100}
+.header h1{font-size:20px;font-weight:700;background:linear-gradient(135deg,#6366f1,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .subtitle{font-size:12px;color:var(--text-muted);margin-left:12px}
+.header .search-box{margin-left:auto;position:relative}
+.header .search-box input{background:var(--bg3);border:1px solid var(--card-border);border-radius:8px;padding:8px 16px 8px 36px;color:var(--text);font-size:13px;width:280px;outline:none;transition:border .2s}
+.header .search-box input:focus{border-color:var(--accent)}
+.header .search-box::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px}
+
+/* Stats Bar */
+.stats-bar{position:fixed;top:64px;left:var(--sidebar-w);right:0;height:52px;background:rgba(17,24,39,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--card-border);display:flex;align-items:center;padding:0 24px;gap:32px;z-index:90}
+.stat-item{display:flex;align-items:center;gap:8px;font-size:13px}
+.stat-item .stat-val{font-weight:700;font-size:16px}
+.stat-item .stat-label{color:var(--text-muted);font-size:11px}
+.stat-item.accent .stat-val{color:var(--accent)}
+.stat-item.green .stat-val{color:var(--green)}
+.stat-item.red .stat-val{color:var(--t0)}
+
+/* Sidebar */
+.sidebar{position:fixed;top:64px;left:0;bottom:0;width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--card-border);overflow-y:auto;z-index:80;padding:16px 0}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--card-border);border-radius:2px}
+.sidebar .mode-toggle{display:flex;margin:0 12px 16px;background:var(--bg);border-radius:8px;padding:3px}
+.sidebar .mode-toggle button{flex:1;padding:6px 0;border:none;background:none;color:var(--text-muted);font-size:12px;font-weight:500;cursor:pointer;border-radius:6px;transition:all .2s}
+.sidebar .mode-toggle button.active{background:var(--accent);color:#fff}
+.sidebar .nav-section{padding:0 8px}
+.sidebar .nav-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text-dim);transition:all .15s;margin-bottom:2px}
+.sidebar .nav-item:hover{background:rgba(99,102,241,0.1);color:var(--text)}
+.sidebar .nav-item.active{background:rgba(99,102,241,0.2);color:#fff;font-weight:600}
+.sidebar .nav-item .count{font-size:11px;background:var(--bg);padding:2px 8px;border-radius:10px;color:var(--text-muted)}
+.sidebar .nav-item .icon{margin-right:8px;font-size:16px}
+
+/* Main Content */
+.main{margin-left:var(--sidebar-w);margin-top:116px;padding:24px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+
+/* Company Card */
+.company-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:20px;cursor:pointer;transition:all .25s ease;position:relative;overflow:hidden}
+.company-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:opacity .25s}
+.company-card:hover{transform:translateY(-4px);border-color:rgba(99,102,241,0.3);box-shadow:0 12px 40px rgba(0,0,0,0.4)}
+.company-card:hover::before{opacity:1}
+.company-card.has-card{border-color:rgba(99,102,241,0.15)}
+.company-card.has-card::before{opacity:.5}
+.company-card.no-card{opacity:.45;filter:saturate(0.3)}
+.company-card.no-card:hover{opacity:.65;filter:saturate(0.5);transform:translateY(-2px)}
+
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.card-name{font-size:16px;font-weight:700}
+.card-ticker{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500}
+.card-flag{font-size:22px}
+.card-badges{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.badge{font-size:10px;padding:3px 8px;border-radius:6px;font-weight:600;text-transform:uppercase}
+.badge-t0{background:rgba(239,68,68,0.15);color:var(--t0);border:1px solid rgba(239,68,68,0.2)}
+.badge-t1{background:rgba(249,115,22,0.15);color:var(--t1);border:1px solid rgba(249,115,22,0.2)}
+.badge-t2{background:rgba(59,130,246,0.15);color:var(--t2);border:1px solid rgba(59,130,246,0.2)}
+.badge-t3{background:rgba(107,114,128,0.15);color:var(--t3);border:1px solid rgba(107,114,128,0.2)}
+.badge-industry{background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.2)}
+.badge-private{background:rgba(107,114,128,0.15);color:var(--t3);border:1px solid rgba(107,114,128,0.2)}
+
+.card-market{display:flex;gap:16px;margin-bottom:12px;padding:8px 0;border-top:1px solid var(--card-border)}
+.market-item{font-size:11px}
+.market-item .label{color:var(--text-muted);margin-bottom:2px}
+.market-item .value{font-weight:600;font-size:14px;color:var(--text)}
+
+.card-actions{display:flex;gap:6px;flex-wrap:wrap}
+.card-actions a,.card-actions span{font-size:11px;padding:4px 10px;border-radius:6px;text-decoration:none;background:rgba(99,102,241,0.1);color:#818cf8;border:1px solid rgba(99,102,241,0.15);transition:all .15s;cursor:pointer}
+.card-actions a:hover{background:rgba(99,102,241,0.25)}
+
+.coming-soon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);padding:8px 16px;border-radius:8px;font-size:12px;color:var(--text-muted);opacity:0;transition:opacity .2s;pointer-events:none}
+.company-card.no-card:hover .coming-soon{opacity:1}
+
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0}
+  .stats-bar{left:0}
+  .card-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>AI & Tech Investment Tracker</h1>
+  <span class="subtitle">Comprehensive coverage across the AI value chain</span>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search company or ticker...">
+  </div>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+
+<div class="sidebar" id="sidebar"></div>
+
+<div class="main">
+  <div class="card-grid" id="cardGrid"></div>
+</div>
+
+<script>
+const companies=[{"name": "Google", "ticker": "GOOGL", "country": "US", "industry": "大型科技平台", "subCategory": "芯片+云+模型+应用", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/9f4c109d048c62a19f09c7b2ceaa4b16", "hasCard": true, "section": "AI", "price": 274.33, "priceDisplay": "$274.33"}, {"name": "Microsoft", "ticker": "MSFT", "country": "US", "industry": "大型科技平台", "subCategory": "云+模型+应用", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/5f90cd80cc5c0c4cfb5de58dae591d81", "hasCard": true, "section": "AI", "price": 364.105, "priceDisplay": "$364.11"}, {"name": "Amazon", "ticker": "AMZN", "country": "US", "industry": "大型科技平台", "subCategory": "芯片+云+模型+应用", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/6eec44b8f96d7664e78838461350d4c2", "hasCard": true, "section": "AI", "price": 202.24, "priceDisplay": "$202.24"}, {"name": "Meta", "ticker": "META", "country": "US", "industry": "大型科技平台", "subCategory": "芯片+模型+应用", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/c381da82748a28949663b72934e4cf62", "hasCard": true, "section": "AI", "price": 533.98, "priceDisplay": "$533.98"}, {"name": "Apple", "ticker": "AAPL", "country": "US", "industry": "大型科技平台", "subCategory": "芯片+应用", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/8d27037e1db1ab7ecf1166ffba6923db", "hasCard": true, "section": "AI", "price": 247.18, "priceDisplay": "$247.18"}, {"name": "腾讯", "ticker": "0700.HK", "country": "CN", "industry": "大型科技平台", "subCategory": "云+模型+应用", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/bd80a22b7e77d6d202aed57e137629ec", "hasCard": true, "section": "AI", "price": 481.6, "priceDisplay": "HK$481.60"}, {"name": "阿里巴巴", "ticker": "BABA", "country": "CN", "industry": "大型科技平台", "subCategory": "云+模型+应用", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/e3d8610444aebc6fba9c8b7174a33f25", "hasCard": true, "section": "AI", "price": 123.06, "priceDisplay": "$123.06"}, {"name": "字节跳动", "ticker": "Private", "country": "CN", "industry": "大型科技平台", "subCategory": "云+模型+应用", "tier": "T0", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "华为", "ticker": "Private", "country": "CN", "industry": "大型科技平台", "subCategory": "芯片+云+应用", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Nvidia", "ticker": "NVDA", "country": "US", "industry": "芯片", "subCategory": "设计", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/78358e6faee63cac9011366986038612", "hasCard": true, "section": "AI", "price": 167.55, "priceDisplay": "$167.55"}, {"name": "AMD", "ticker": "AMD", "country": "US", "industry": "芯片", "subCategory": "设计", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 200.585, "priceDisplay": "$200.59"}, {"name": "Broadcom", "ticker": "AVGO", "country": "US", "industry": "芯片", "subCategory": "设计+网络", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "AI", "price": 293.59, "priceDisplay": "$293.59"}, {"name": "Qualcomm", "ticker": "QCOM", "country": "US", "industry": "芯片", "subCategory": "设计", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 127.86, "priceDisplay": "$127.86"}, {"name": "Intel", "ticker": "INTC", "country": "US", "industry": "芯片", "subCategory": "设计", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 41.76, "priceDisplay": "$41.76"}, {"name": "Marvell", "ticker": "MRVL", "country": "US", "industry": "芯片", "subCategory": "设计", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 89.93, "priceDisplay": "$89.93"}, {"name": "Arm Holdings", "ticker": "ARM", "country": "US", "industry": "芯片", "subCategory": "设计 IP", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 139.985, "priceDisplay": "$139.99"}, {"name": "Micron", "ticker": "MU", "country": "US", "industry": "芯片", "subCategory": "存储", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/140e3be4893d189af7dd223e7fd2ea91", "hasCard": true, "section": "AI", "price": 340.69, "priceDisplay": "$340.69"}, {"name": "Monolithic Power", "ticker": "MPWR", "country": "US", "industry": "芯片", "subCategory": "电源管理", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 1012.52, "priceDisplay": "$1,012.52"}, {"name": "Applied Materials", "ticker": "AMAT", "country": "US", "industry": "芯片", "subCategory": "设备", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 325.77, "priceDisplay": "$325.77"}, {"name": "Lam Research", "ticker": "LRCX", "country": "US", "industry": "芯片", "subCategory": "设备", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 202.53, "priceDisplay": "$202.53"}, {"name": "KLA", "ticker": "KLAC", "country": "US", "industry": "芯片", "subCategory": "设备", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 1381.38, "priceDisplay": "$1,381.38"}, {"name": "Arista Networks", "ticker": "ANET", "country": "US", "industry": "芯片", "subCategory": "网络", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 119.69, "priceDisplay": "$119.69"}, {"name": "Cisco", "ticker": "CSCO", "country": "US", "industry": "芯片", "subCategory": "网络", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 78.46, "priceDisplay": "$78.46"}, {"name": "台积电", "ticker": "TSM", "country": "TW", "industry": "芯片", "subCategory": "制造", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/adb3db620a2c2ac0f1d1b62846291e0e", "hasCard": true, "section": "AI", "price": 318.0, "priceDisplay": "$318.00"}, {"name": "三星电子", "ticker": "005930.KS", "country": "KR", "industry": "芯片", "subCategory": "制造+存储", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/262967d0e3272e5061397ad3364f625f", "hasCard": true, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "SK 海力士", "ticker": "000660.KS", "country": "KR", "industry": "芯片", "subCategory": "存储", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/4427a342c8c2a43f90c2b32c9f35b029", "hasCard": true, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "ASML", "ticker": "ASML", "country": "NL", "industry": "芯片", "subCategory": "设备", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 1264.66, "priceDisplay": "$1,264.66"}, {"name": "Tokyo Electron", "ticker": "8035.T", "country": "JP", "industry": "芯片", "subCategory": "设备", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 39290.0, "priceDisplay": "¥39,290"}, {"name": "寒武纪", "ticker": "688256.SH", "country": "CN", "industry": "芯片", "subCategory": "设计", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "海光信息", "ticker": "688041.SH", "country": "CN", "industry": "芯片", "subCategory": "设计", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "摩尔线程", "ticker": "688396.SH", "country": "CN", "industry": "芯片", "subCategory": "设计", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "兆易创新", "ticker": "603986.SH", "country": "CN", "industry": "芯片", "subCategory": "存储+MCU", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "中芯国际", "ticker": "688981.SH", "country": "CN", "industry": "芯片", "subCategory": "制造", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "北方华创", "ticker": "002371.SZ", "country": "CN", "industry": "芯片", "subCategory": "设备", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "中微公司", "ticker": "688012.SH", "country": "CN", "industry": "芯片", "subCategory": "设备", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "Dell", "ticker": "DELL", "country": "US", "industry": "Infra/算力云", "subCategory": "服务器", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 167.45, "priceDisplay": "$167.45"}, {"name": "Super Micro", "ticker": "SMCI", "country": "US", "industry": "Infra/算力云", "subCategory": "服务器", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 21.57, "priceDisplay": "$21.57"}, {"name": "Celestica", "ticker": "CLS", "country": "US", "industry": "Infra/算力云", "subCategory": "服务器代工", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 262.0, "priceDisplay": "$262.00"}, {"name": "Vertiv", "ticker": "VRT", "country": "US", "industry": "Infra/算力云", "subCategory": "电力/冷却", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 237.52, "priceDisplay": "$237.52"}, {"name": "Eaton", "ticker": "ETN", "country": "US", "industry": "Infra/算力云", "subCategory": "电力管理", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 345.69, "priceDisplay": "$345.69"}, {"name": "Coherent", "ticker": "COHR", "country": "US", "industry": "Infra/算力云", "subCategory": "光模块", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 224.02, "priceDisplay": "$224.02"}, {"name": "Lumentum", "ticker": "LITE", "country": "US", "industry": "Infra/算力云", "subCategory": "光通信", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 658.15, "priceDisplay": "$658.15"}, {"name": "Fabrinet", "ticker": "FN", "country": "US", "industry": "Infra/算力云", "subCategory": "光模块代工", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 509.085, "priceDisplay": "$509.08"}, {"name": "Oracle", "ticker": "ORCL", "country": "US", "industry": "Infra/算力云", "subCategory": "云", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "AI", "price": 138.66, "priceDisplay": "$138.66"}, {"name": "CoreWeave", "ticker": "CRWV", "country": "US", "industry": "Infra/算力云", "subCategory": "GPU 云", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "AI", "price": 69.6099, "priceDisplay": "$69.61"}, {"name": "Nebius", "ticker": "NBIS", "country": "US", "industry": "Infra/算力云", "subCategory": "GPU 云", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "AI", "price": 94.095, "priceDisplay": "$94.09"}, {"name": "Lambda", "ticker": "Private", "country": "US", "industry": "Infra/算力云", "subCategory": "GPU 云", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Crusoe Energy", "ticker": "Private", "country": "US", "industry": "Infra/算力云", "subCategory": "GPU 云", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Together AI", "ticker": "Private", "country": "US", "industry": "Infra/算力云", "subCategory": "推理云", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "中际旭创", "ticker": "300308.SZ", "country": "CN", "industry": "Infra/算力云", "subCategory": "光模块", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "新易盛", "ticker": "300502.SZ", "country": "CN", "industry": "Infra/算力云", "subCategory": "光模块", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "浪潮信息", "ticker": "000977.SZ", "country": "CN", "industry": "Infra/算力云", "subCategory": "服务器", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "紫光股份", "ticker": "000938.SZ", "country": "CN", "industry": "Infra/算力云", "subCategory": "服务器+网络", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "OpenAI", "ticker": "Private", "country": "US", "industry": "基础模型", "subCategory": "基础模型", "tier": "T0", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Anthropic", "ticker": "Private", "country": "US", "industry": "基础模型", "subCategory": "基础模型", "tier": "T0", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "xAI", "ticker": "Private", "country": "US", "industry": "基础模型", "subCategory": "基础模型", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Mistral AI", "ticker": "Private", "country": "US", "industry": "基础模型", "subCategory": "基础模型", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Cohere", "ticker": "Private", "country": "US", "industry": "基础模型", "subCategory": "基础模型", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Stability AI", "ticker": "Private", "country": "US", "industry": "基础模型", "subCategory": "基础模型", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "百度", "ticker": "BIDU", "country": "CN", "industry": "基础模型", "subCategory": "基础模型", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 107.2, "priceDisplay": "$107.20"}, {"name": "科大讯飞", "ticker": "002230.SZ", "country": "CN", "industry": "基础模型", "subCategory": "基础模型", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": "—"}, {"name": "商汤科技", "ticker": "0020.HK", "country": "CN", "industry": "基础模型", "subCategory": "基础模型", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 1.86, "priceDisplay": "HK$1.86"}, {"name": "智谱 AI", "ticker": "2513.HK", "country": "CN", "industry": "基础模型", "subCategory": "基础模型", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/c5049a0c6f2edcb48f63d1f4e11b02cd", "hasCard": true, "section": "AI", "price": 733.5, "priceDisplay": "HK$733.50"}, {"name": "MiniMax", "ticker": "0100.HK", "country": "CN", "industry": "基础模型", "subCategory": "基础模型", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/7f61d2835caf7a49ba14f8922f14932a", "hasCard": true, "section": "AI", "price": 1014.0, "priceDisplay": "HK$1,014.00"}, {"name": "DeepSeek", "ticker": "Private", "country": "CN", "industry": "基础模型", "subCategory": "基础模型", "tier": "T0", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "月之暗面", "ticker": "Private", "country": "CN", "industry": "基础模型", "subCategory": "基础模型", "tier": "T0", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "阶跃星辰", "ticker": "Private", "country": "CN", "industry": "基础模型", "subCategory": "基础模型", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Palantir", "ticker": "PLTR", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "AI", "price": 141.165, "priceDisplay": "$141.16"}, {"name": "C3.ai", "ticker": "AI", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 7.7525, "priceDisplay": "$7.75"}, {"name": "SoundHound AI", "ticker": "SOUN", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 5.885, "priceDisplay": "$5.88"}, {"name": "UiPath", "ticker": "PATH", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 11.0, "priceDisplay": "$11.00"}, {"name": "Salesforce", "ticker": "CRM", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 182.735, "priceDisplay": "$182.74"}, {"name": "ServiceNow", "ticker": "NOW", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 103.535, "priceDisplay": "$103.53"}, {"name": "Snowflake", "ticker": "SNOW", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 156.115, "priceDisplay": "$156.12"}, {"name": "Datadog", "ticker": "DDOG", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 117.48, "priceDisplay": "$117.48"}, {"name": "MongoDB", "ticker": "MDB", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 239.47, "priceDisplay": "$239.47"}, {"name": "Duolingo", "ticker": "DUOL", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 95.27, "priceDisplay": "$95.27"}, {"name": "Adobe", "ticker": "ADBE", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "AI", "price": 240.56, "priceDisplay": "$240.56"}, {"name": "Intuit", "ticker": "INTU", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 424.02, "priceDisplay": "$424.02"}, {"name": "HubSpot", "ticker": "HUBS", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 237.355, "priceDisplay": "$237.35"}, {"name": "CrowdStrike", "ticker": "CRWD", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": 385.88, "priceDisplay": "$385.88"}, {"name": "Perplexity", "ticker": "Private", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Cursor", "ticker": "Private", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Runway", "ticker": "Private", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Midjourney", "ticker": "Private", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Pika", "ticker": "Private", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Character.AI", "ticker": "Private", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Databricks", "ticker": "Private", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Weights & Biases", "ticker": "Private", "country": "US", "industry": "应用层", "subCategory": "应用", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "AI", "price": null, "priceDisplay": null}, {"name": "Reddit", "ticker": "RDDT", "country": "US", "industry": "社交/内容", "subCategory": "社交", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/89bfdb5e1c2a6edb2f64718bbfd12a06", "hasCard": true, "section": "Other", "price": 123.81, "priceDisplay": "$123.81"}, {"name": "Pinterest", "ticker": "PINS", "country": "US", "industry": "社交/内容", "subCategory": "社交", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/df88c1ef5e2623833c0faeb0e41a58e5", "hasCard": true, "section": "Other", "price": 17.96, "priceDisplay": "$17.96"}, {"name": "Snap", "ticker": "SNAP", "country": "US", "industry": "社交/内容", "subCategory": "社交", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 4.065, "priceDisplay": "$4.07"}, {"name": "Spotify", "ticker": "SPOT", "country": "US", "industry": "社交/内容", "subCategory": "内容", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 473.2375, "priceDisplay": "$473.24"}, {"name": "Netflix", "ticker": "NFLX", "country": "US", "industry": "社交/内容", "subCategory": "内容", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 93.425, "priceDisplay": "$93.42"}, {"name": "AppLovin", "ticker": "APP", "country": "US", "industry": "社交/内容", "subCategory": "广告", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 373.74, "priceDisplay": "$373.74"}, {"name": "Unity", "ticker": "U", "country": "US", "industry": "社交/内容", "subCategory": "游戏引擎", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 20.31, "priceDisplay": "$20.31"}, {"name": "快手", "ticker": "1024.HK", "country": "CN", "industry": "社交/内容", "subCategory": "社交", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/5191e80a02b48b893360fad9d1feb3ae", "hasCard": true, "section": "Other", "price": 45.02, "priceDisplay": "HK$45.02"}, {"name": "B站", "ticker": "BILI", "country": "CN", "industry": "社交/内容", "subCategory": "内容", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/0d249e4fc127317a54c7032610315027", "hasCard": true, "section": "Other", "price": 21.81, "priceDisplay": "$21.81"}, {"name": "腾讯音乐", "ticker": "TME", "country": "CN", "industry": "社交/内容", "subCategory": "内容", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 9.455, "priceDisplay": "$9.46"}, {"name": "Take-Two", "ticker": "TTWO", "country": "US", "industry": "游戏", "subCategory": "游戏", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 193.81, "priceDisplay": "$193.81"}, {"name": "EA", "ticker": "EA", "country": "US", "industry": "游戏", "subCategory": "游戏", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 202.465, "priceDisplay": "$202.47"}, {"name": "Roblox", "ticker": "RBLX", "country": "US", "industry": "游戏", "subCategory": "游戏", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 51.715, "priceDisplay": "$51.72"}, {"name": "Epic Games", "ticker": "Private", "country": "US", "industry": "游戏", "subCategory": "游戏", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": null, "priceDisplay": null}, {"name": "网易", "ticker": "NTES", "country": "CN", "industry": "游戏", "subCategory": "游戏", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 110.67, "priceDisplay": "$110.67"}, {"name": "心动网络", "ticker": "2400.HK", "country": "CN", "industry": "游戏", "subCategory": "游戏", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 63.0, "priceDisplay": "HK$63.00"}, {"name": "Capcom", "ticker": "9697.T", "country": "JP", "industry": "游戏", "subCategory": "游戏", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 3407.0, "priceDisplay": "¥3,407"}, {"name": "任天堂", "ticker": "7974.T", "country": "JP", "industry": "游戏", "subCategory": "游戏", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 9215.0, "priceDisplay": "¥9,215"}, {"name": "索尼", "ticker": "6758.T", "country": "JP", "industry": "游戏", "subCategory": "游戏", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 3209.0, "priceDisplay": "¥3,209"}, {"name": "拼多多", "ticker": "PDD", "country": "CN", "industry": "电商/本地生活", "subCategory": "电商", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/4444ce2e94be2d118dbc53b36b70e2c7", "hasCard": true, "section": "Other", "price": 99.8, "priceDisplay": "$99.80"}, {"name": "美团", "ticker": "3690.HK", "country": "CN", "industry": "电商/本地生活", "subCategory": "本地生活", "tier": "T0", "cardUrl": "https://docs.xiaohongshu.com/doc/d9412bdd4d1cff84e773348340c2776d", "hasCard": true, "section": "Other", "price": 84.2, "priceDisplay": "HK$84.20"}, {"name": "京东", "ticker": "JD", "country": "CN", "industry": "电商/本地生活", "subCategory": "电商", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 29.035, "priceDisplay": "$29.04"}, {"name": "Shopify", "ticker": "SHOP", "country": "US", "industry": "电商/本地生活", "subCategory": "电商", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 112.69, "priceDisplay": "$112.69"}, {"name": "DoorDash", "ticker": "DASH", "country": "US", "industry": "电商/本地生活", "subCategory": "本地生活", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "Other", "price": 147.095, "priceDisplay": "$147.09"}, {"name": "Tesla", "ticker": "TSLA", "country": "US", "industry": "出行/自动驾驶", "subCategory": "出行", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 362.89, "priceDisplay": "$362.89"}, {"name": "Uber", "ticker": "UBER", "country": "US", "industry": "出行/自动驾驶", "subCategory": "出行", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 69.47, "priceDisplay": "$69.47"}, {"name": "Lyft", "ticker": "LYFT", "country": "US", "industry": "出行/自动驾驶", "subCategory": "出行", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "Other", "price": 12.65, "priceDisplay": "$12.65"}, {"name": "Waymo", "ticker": "Private", "country": "US", "industry": "出行/自动驾驶", "subCategory": "自动驾驶", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "Other", "price": null, "priceDisplay": null}, {"name": "滴滴", "ticker": "DIDIY", "country": "CN", "industry": "出行/自动驾驶", "subCategory": "出行", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 3.78, "priceDisplay": "$3.78"}, {"name": "地平线", "ticker": "9660.HK", "country": "CN", "industry": "出行/自动驾驶", "subCategory": "自动驾驶", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 6.8, "priceDisplay": "HK$6.80"}, {"name": "小鹏", "ticker": "XPEV", "country": "CN", "industry": "出行/自动驾驶", "subCategory": "出行", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 16.825, "priceDisplay": "$16.82"}, {"name": "理想", "ticker": "LI", "country": "CN", "industry": "出行/自动驾驶", "subCategory": "出行", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 17.485, "priceDisplay": "$17.48"}, {"name": "蔚来", "ticker": "NIO", "country": "CN", "industry": "出行/自动驾驶", "subCategory": "出行", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 5.52, "priceDisplay": "$5.52"}, {"name": "Costco", "ticker": "COST", "country": "US", "industry": "消费/零售", "subCategory": "零售", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 1002.49, "priceDisplay": "$1,002.49"}, {"name": "泡泡玛特", "ticker": "9992.HK", "country": "CN", "industry": "消费/零售", "subCategory": "消费", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 148.7, "priceDisplay": "HK$148.70"}, {"name": "瑞幸咖啡", "ticker": "LKNCY", "country": "CN", "industry": "消费/零售", "subCategory": "消费", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 31.67, "priceDisplay": "$31.67"}, {"name": "小米", "ticker": "1810.HK", "country": "CN", "industry": "消费/零售", "subCategory": "硬件", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 32.38, "priceDisplay": "HK$32.38"}, {"name": "Boss直聘", "ticker": "BZ", "country": "CN", "industry": "招聘/旅游/房产", "subCategory": "招聘", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 13.49, "priceDisplay": "$13.49"}, {"name": "携程", "ticker": "TCOM", "country": "CN", "industry": "招聘/旅游/房产", "subCategory": "旅游", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 49.28, "priceDisplay": "$49.28"}, {"name": "贝壳", "ticker": "BEKE", "country": "CN", "industry": "招聘/旅游/房产", "subCategory": "房产", "tier": "T1", "cardUrl": null, "hasCard": false, "section": "Other", "price": 15.075, "priceDisplay": "$15.07"}, {"name": "满帮", "ticker": "YMM", "country": "CN", "industry": "招聘/旅游/房产", "subCategory": "物流", "tier": "T2", "cardUrl": null, "hasCard": false, "section": "Other", "price": 8.115, "priceDisplay": "$8.12"}, {"name": "优必选", "ticker": "9880.HK", "country": "CN", "industry": "机器人", "subCategory": "机器人", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "Other", "price": 87.7, "priceDisplay": "HK$87.70"}, {"name": "宇树科技", "ticker": "Private", "country": "CN", "industry": "机器人", "subCategory": "机器人", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "Other", "price": null, "priceDisplay": null}, {"name": "Figure AI", "ticker": "Private", "country": "US", "industry": "机器人", "subCategory": "机器人", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "Other", "price": null, "priceDisplay": null}, {"name": "1X Technologies", "ticker": "Private", "country": "US", "industry": "机器人", "subCategory": "机器人", "tier": "T3", "cardUrl": null, "hasCard": false, "section": "Other", "price": null, "priceDisplay": null}];
+
+const FLAG_MAP={US:'🇺🇸',CN:'🇨🇳',TW:'🇹🇼',KR:'🇰🇷',JP:'🇯🇵',NL:'🇳🇱'};
+const COUNTRY_NAMES={US:'United States',CN:'China',TW:'Taiwan',KR:'Korea',JP:'Japan',NL:'Netherlands'};
+const INDUSTRY_ICONS={'大型科技平台':'🏢','芯片':'💎','Infra/算力云':'☁️','基础模型':'🧠','应用层':'📱','社交/内容':'💬','游戏':'🎮','电商/本地生活':'🛒','出行/自动驾驶':'🚗','消费/零售':'🛍️','招聘/旅游/房产':'🏠','机器人':'🤖'};
+const INDUSTRIES=['大型科技平台','芯片','Infra/算力云','基础模型','应用层','社交/内容','游戏','电商/本地生活','出行/自动驾驶','消费/零售','招聘/旅游/房产','机器人'];
+const COUNTRIES=['US','CN','TW','KR','JP','NL'];
+
+let viewMode='industry';
+let activeFilter='all';
+let searchQuery='';
+
+function renderStats(filtered){
+  const total=companies.length;
+  const active=companies.filter(c=>c.hasCard).length;
+  const t0=companies.filter(c=>c.tier==='T0').length;
+  const rate=((active/total)*100).toFixed(0);
+  document.getElementById('statsBar').innerHTML=`
+    <div class="stat-item accent"><div><div class="stat-val">${total}</div><div class="stat-label">Total Tracked</div></div></div>
+    <div class="stat-item green"><div><div class="stat-val">${active}</div><div class="stat-label">Active Cards</div></div></div>
+    <div class="stat-item red"><div><div class="stat-val">${t0}</div><div class="stat-label">T0 Priority</div></div></div>
+    <div class="stat-item"><div><div class="stat-val">${rate}%</div><div class="stat-label">Coverage Rate</div></div></div>
+    <div class="stat-item"><div><div class="stat-val">${filtered.length}</div><div class="stat-label">Showing</div></div></div>`;
+}
+
+function renderSidebar(){
+  const sb=document.getElementById('sidebar');
+  let items=[];
+  if(viewMode==='industry'){
+    items=INDUSTRIES.map(ind=>{
+      const cnt=companies.filter(c=>c.industry===ind).length;
+      return{key:ind,label:`${INDUSTRY_ICONS[ind]||''} ${ind}`,count:cnt};
+    });
+  }else{
+    items=COUNTRIES.map(c=>{
+      const cnt=companies.filter(co=>co.country===c).length;
+      return{key:c,label:`${FLAG_MAP[c]} ${COUNTRY_NAMES[c]}`,count:cnt};
+    });
+  }
+  sb.innerHTML=`
+    <div class="mode-toggle">
+      <button class="${viewMode==='industry'?'active':''}" onclick="setMode('industry')">By Industry</button>
+      <button class="${viewMode==='country'?'active':''}" onclick="setMode('country')">By Country</button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-item ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">
+        <span>📋 All Companies</span><span class="count">${companies.length}</span>
+      </div>
+      ${items.map(i=>`
+        <div class="nav-item ${activeFilter===i.key?'active':''}" onclick="setFilter('${i.key}')">
+          <span>${i.label}</span><span class="count">${i.count}</span>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+function getFiltered(){
+  let list=[...companies];
+  if(activeFilter!=='all'){
+    if(viewMode==='industry') list=list.filter(c=>c.industry===activeFilter);
+    else list=list.filter(c=>c.country===activeFilter);
+  }
+  if(searchQuery){
+    const q=searchQuery.toLowerCase();
+    list=list.filter(c=>c.name.toLowerCase().includes(q)||c.ticker.toLowerCase().includes(q));
+  }
+  list.sort((a,b)=>{
+    if(a.hasCard&&!b.hasCard)return-1;
+    if(!a.hasCard&&b.hasCard)return 1;
+    const tierOrder={T0:0,T1:1,T2:2,T3:3};
+    return(tierOrder[a.tier]||9)-(tierOrder[b.tier]||9);
+  });
+  return list;
+}
+
+function renderCards(){
+  const filtered=getFiltered();
+  renderStats(filtered);
+  const grid=document.getElementById('cardGrid');
+  grid.innerHTML=filtered.map(c=>{
+    const flag=FLAG_MAP[c.country]||'🌍';
+    const isPrivate=c.ticker==='Private';
+    const cardClass=c.hasCard?'has-card':'no-card';
+    const priceDisplay=c.priceDisplay||'—';
+    const marketHtml=isPrivate?
+      `<div class="card-market"><div class="market-item"><div class="label">Status</div><div class="value"><span class="badge badge-private">Private</span></div></div></div>`:
+      `<div class="card-market"><div class="market-item"><div class="label">Price</div><div class="value">${priceDisplay}</div></div></div>`;
+    const actionsHtml=c.hasCard?`
+      <div class="card-actions">
+        <a href="${c.cardUrl}" target="_blank" onclick="event.stopPropagation()">📋 Card</a>
+        <span>📊 Earnings</span>
+        <span>🔍 Deep Dive</span>
+      </div>`:'';
+    return`
+      <div class="company-card ${cardClass}" onclick="${c.hasCard?`window.open('${c.cardUrl}','_blank')`:''}" title="${c.hasCard?'Click to view card':'Coming soon'}">
+        <div class="card-top">
+          <div><div class="card-name">${c.name}</div><div class="card-ticker">${c.ticker}</div></div>
+          <div class="card-flag">${flag}</div>
+        </div>
+        <div class="card-badges">
+          <span class="badge badge-${c.tier.toLowerCase()}">${c.tier}</span>
+          <span class="badge badge-industry">${c.subCategory}</span>
+        </div>
+        ${marketHtml}
+        ${actionsHtml}
+        ${!c.hasCard?'<div class="coming-soon">🔜 Coming Soon</div>':''}
+      </div>`;
+  }).join('');
+}
+
+function setMode(m){viewMode=m;activeFilter='all';renderSidebar();renderCards();}
+function setFilter(f){activeFilter=f;renderSidebar();renderCards();}
+
+document.getElementById('searchInput').addEventListener('input',e=>{searchQuery=e.target.value;renderCards();});
+
+renderSidebar();
+renderCards();
+</script>
+</body>
+</html>
